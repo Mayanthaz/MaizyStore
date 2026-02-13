@@ -53,10 +53,17 @@ export default function ProductsPage() {
             toast.error('Please login to add items to cart')
             return
         }
-        toast.success(`${product.name} added to cart! 🛒`)
-        // API call logic kept but UI feedback is instant
-        cartAPI.add(product.id, 1).catch(() => { })
+
+        const loadingToast = toast.loading(`Adding ${product.name}...`)
+        try {
+            await cartAPI.add(product.id, 1)
+            toast.success(`${product.name} added to cart! 🛒`, { id: loadingToast })
+        } catch (error) {
+            console.error('Add to cart failed:', error)
+            toast.error(error.response?.data?.message || 'Failed to add item to cart', { id: loadingToast })
+        }
     }
+
 
     const filteredProducts = products.filter(product => {
         const matchesCategory = filter === 'all' || product.category.toLowerCase() === filter.toLowerCase()
@@ -158,7 +165,8 @@ export default function ProductsPage() {
                                 layout
                                 variants={item}
                                 key={product.id}
-                                className="group glass rounded-3xl overflow-hidden border border-white/5 hover:border-purple-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/20"
+                                onClick={() => navigate(`/products/${product.slug || product.id}`)}
+                                className="group glass rounded-3xl overflow-hidden border border-white/5 hover:border-purple-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer"
                             >
                                 {/* Card Image Area */}
                                 <div className={`h-56 bg-gradient-to-br ${getGradient(product.category)} relative overflow-hidden p-6 flex flex-col justify-between group-hover:scale-105 transition-transform duration-700`}>
@@ -214,7 +222,10 @@ export default function ProductsPage() {
                                             <motion.button
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
-                                                onClick={() => navigate(`/products/${product.slug || product.id}`)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/products/${product.slug || product.id}`);
+                                                }}
                                                 className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-all"
                                             >
                                                 Learn More
@@ -223,7 +234,10 @@ export default function ProductsPage() {
                                             <motion.button
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
-                                                onClick={() => addToCart(product)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    addToCart(product);
+                                                }}
                                                 disabled={product.stock === 0}
                                                 className="h-10 w-10 rounded-xl bg-gradient-primary flex items-center justify-center text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all"
                                             >
@@ -233,6 +247,7 @@ export default function ProductsPage() {
                                     </div>
                                 </div>
                             </motion.div>
+
                         ))}
                     </AnimatePresence>
                 </motion.div>

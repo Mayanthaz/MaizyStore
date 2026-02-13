@@ -28,7 +28,24 @@ export const AuthProvider = ({ children }) => {
                 setUser(data.user)
             } catch (error) {
                 console.error('Auth check failed:', error)
-                localStorage.removeItem('token')
+                // Try to decode JWT payload as fallback (for hardcoded admin)
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]))
+                    if (payload && payload.email && payload.role) {
+                        setUser({
+                            id: payload.id,
+                            username: payload.username,
+                            email: payload.email,
+                            full_name: payload.full_name || payload.username,
+                            role: payload.role
+                        })
+                    } else {
+                        localStorage.removeItem('token')
+                    }
+                } catch (decodeError) {
+                    console.error('Token decode failed:', decodeError)
+                    localStorage.removeItem('token')
+                }
             }
         }
         setLoading(false)

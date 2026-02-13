@@ -7,6 +7,11 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
 const { testConnection } = require('./config/database');
+const logger = require('./utils/logger');
+const validateEnv = require('./utils/validateEnv');
+
+// Validate environment before starting
+validateEnv();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -51,7 +56,7 @@ app.get('*', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
+    logger.error(`${req.method} ${req.url} - Error:`, err);
     res.status(err.status || 500).json({
         success: false,
         message: err.message || 'Internal server error'
@@ -59,29 +64,42 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-async function startServer() {
-    try {
-        // Test database connection
-        const dbConnected = await testConnection();
-
-        if (!dbConnected) {
-            console.warn('⚠️  Database connection failed, but server will continue...');
-            console.warn('Please check your database configuration in .env file');
+if (process.env.NODE_ENV !== 'production') {
+    async function startServer() {
+        try {
+            const dbConnected = await testConnection();
+            if (!dbConnected) {
+                logger.warn('⚠️  Database connection failing, check .env');
+            }
+            app.listen(PORT, () => {
+                logger.info(`🚀 Server running on http://localhost:${PORT}`);
+            });
+        } catch (error) {
+            logger.error('Failed to start server:', error);
         }
-
-        app.listen(PORT, () => {
-            console.log('╔════════════════════════════════════════════╗');
-            console.log('║         MAIZY STORE - API SERVER          ║');
-            console.log('╚════════════════════════════════════════════╝');
-            console.log(`🚀 Server running on http://localhost:${PORT}`);
-            console.log(`📊 API endpoint: http://localhost:${PORT}/api`);
-            console.log(`💻 Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log('════════════════════════════════════════════');
-        });
-    } catch (error) {
-        console.error('Failed to start server:', error);
-        process.exit(1);
     }
+    startServer();
 }
 
-startServer();
+// Graceful shutdown
+const gracefulShutdown = async (signal) => {
+    logger.info(`${signal} received. Shutting down gracefully...`);
+
+    // Close database pool if it exists
+    const { pool } = require('./config/database');
+    if (pool) {
+        try {
+            await pool.end();
+            logger.info('Database pool closed');
+        } catch (err) {
+            logger.error('Error closing database pool:', err);
+        }
+    }
+
+    process.exit(0);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+module.exports = app;

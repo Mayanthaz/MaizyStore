@@ -26,8 +26,19 @@ export default function SupportPage() {
                     How can we help?
                 </h1>
                 <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                    Our dedicated support team is here to assist you 24/7. Whether you have questions about products, payments, or your account.
+                    We've moved our support to Telegram for 24/7 instant assistance. Click the button below to chat with us.
                 </p>
+                <div className="pt-4">
+                    <a
+                        href="https://t.me/Maizystore"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-3 px-8 py-4 bg-[#24A1DE] hover:bg-[#208aba] text-white font-bold rounded-2xl shadow-lg transition-all transform hover:scale-105"
+                    >
+                        <Send size={24} /> Chat on Telegram
+                    </a>
+                </div>
+
             </motion.div>
 
             <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">

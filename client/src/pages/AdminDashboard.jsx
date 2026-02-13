@@ -11,8 +11,8 @@ export default function AdminDashboard() {
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
 
-    // Add Product Modal State
     const [showAddModal, setShowAddModal] = useState(false)
+    const [editingProduct, setEditingProduct] = useState(null)
     const [newProduct, setNewProduct] = useState({
         name: '',
         description: '',
@@ -64,18 +64,35 @@ export default function AdminDashboard() {
         }
     }
 
-    const handleCreateProduct = async (e) => {
+    const handleDeleteProduct = async (productId) => {
+        if (!window.confirm('Are you sure you want to delete this product?')) return
+        try {
+            await adminAPI.deleteProduct(productId)
+            toast.success('Product deleted')
+            fetchData()
+        } catch (error) {
+            toast.error('Failed to delete product')
+        }
+    }
+
+    const handleSubmitProduct = async (e) => {
         e.preventDefault()
         try {
-            await adminAPI.createProduct(newProduct)
-            toast.success('Product created successfully! 🎉')
+            if (editingProduct) {
+                await adminAPI.updateProduct(editingProduct.id, newProduct)
+                toast.success('Product updated successfully! 🪄')
+            } else {
+                await adminAPI.createProduct(newProduct)
+                toast.success('Product created successfully! 🎉')
+            }
             setShowAddModal(false)
-            fetchData() // Refresh list
+            setEditingProduct(null)
+            fetchData()
             setNewProduct({
                 name: '', description: '', price: '', category: 'streaming', stock: 50, duration: '1 Month', image_url: ''
             })
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to create product')
+            toast.error(error.response?.data?.message || 'Operation failed')
         }
     }
 
@@ -171,7 +188,13 @@ export default function AdminDashboard() {
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold">Product List</h3>
                             <button
-                                onClick={() => setShowAddModal(true)}
+                                onClick={() => {
+                                    setEditingProduct(null);
+                                    setNewProduct({
+                                        name: '', description: '', price: '', category: 'streaming', stock: 50, duration: '1 Month', image_url: ''
+                                    });
+                                    setShowAddModal(true);
+                                }}
                                 className="px-4 py-2 bg-gradient-primary rounded-lg text-white text-sm flex items-center gap-2 hover:opacity-90 transition-all hover-lift"
                             >
                                 <Plus size={16} /> Add Product
@@ -187,8 +210,12 @@ export default function AdminDashboard() {
                                     key={product.id}
                                     className="bg-white/5 p-4 rounded-xl border border-white/5 flex gap-4 hover:border-purple-500/30 transition-colors"
                                 >
-                                    <div className={`w-16 h-16 rounded bg-gradient-to-br ${getGradient(product.category)} shrink-0 flex items-center justify-center`}>
-                                        <Package className="text-white/50" />
+                                    <div className={`w-16 h-16 rounded bg-gradient-to-br ${getGradient(product.category)} shrink-0 flex items-center justify-center overflow-hidden`}>
+                                        {product.image_url ? (
+                                            <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Package className="text-white/50" />
+                                        )}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <h4 className="font-bold truncate text-white">{product.name}</h4>
@@ -196,8 +223,22 @@ export default function AdminDashboard() {
                                         <p className="text-xs text-gray-500">Stock: {product.stock}</p>
                                     </div>
                                     <div className="flex flex-col gap-2">
-                                        <button className="p-2 text-blue-400 hover:bg-blue-400/10 rounded transition-colors"><Edit2 size={16} /></button>
-                                        <button className="p-2 text-red-400 hover:bg-red-400/10 rounded transition-colors"><Trash2 size={16} /></button>
+                                        <button
+                                            onClick={() => {
+                                                setEditingProduct(product);
+                                                setNewProduct({ ...product });
+                                                setShowAddModal(true);
+                                            }}
+                                            className="p-2 text-blue-400 hover:bg-blue-400/10 rounded transition-colors"
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteProduct(product.id)}
+                                            className="p-2 text-red-400 hover:bg-red-400/10 rounded transition-colors"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
                                     </div>
                                 </motion.div>
                             ))}
@@ -217,7 +258,9 @@ export default function AdminDashboard() {
                             className="glass p-8 rounded-2xl w-full max-w-lg border border-white/10"
                         >
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold text-white">Add New Product</h3>
+                                <h3 className="text-xl font-bold text-white">
+                                    {editingProduct ? 'Edit Product' : 'Add New Product'}
+                                </h3>
                                 <button
                                     onClick={() => setShowAddModal(false)}
                                     className="p-1 hover:bg-white/10 rounded-full transition-colors"
@@ -226,7 +269,7 @@ export default function AdminDashboard() {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleCreateProduct} className="space-y-4">
+                            <form onSubmit={handleSubmitProduct} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm text-gray-400 mb-1">Name</label>
@@ -283,11 +326,34 @@ export default function AdminDashboard() {
                                     />
                                 </div>
 
+                                <div>
+                                    <label className="block text-sm text-gray-400 mb-1">Image URL</label>
+                                    <div className="flex gap-4 items-center">
+                                        <div className="flex-1">
+                                            <input
+                                                type="url"
+                                                placeholder="https://example.com/image.png"
+                                                value={newProduct.image_url}
+                                                onChange={e => setNewProduct({ ...newProduct, image_url: e.target.value })}
+                                                className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-purple-500 outline-none"
+                                            />
+                                        </div>
+                                        {newProduct.image_url && (
+                                            <div className="w-12 h-12 rounded-lg border border-white/10 overflow-hidden bg-white/5 shrink-0 flex items-center justify-center">
+                                                <img src={newProduct.image_url} alt="Preview" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 mt-1">Direct link to an image (Unsplash, Imgur, etc.)</p>
+                                </div>
+
+
                                 <button
                                     type="submit"
                                     className="w-full py-3 bg-gradient-primary rounded-xl text-white font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 glow"
                                 >
-                                    <Plus size={20} /> Create Product
+                                    {editingProduct ? <Edit2 size={20} /> : <Plus size={20} />}
+                                    {editingProduct ? 'Update Product' : 'Create Product'}
                                 </button>
                             </form>
                         </motion.div>

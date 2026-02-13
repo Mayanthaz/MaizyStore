@@ -11,6 +11,9 @@ export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false)
     const [showProfileMenu, setShowProfileMenu] = useState(false)
     const [scrolled, setScrolled] = useState(false)
+    const [showSearch, setShowSearch] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
+
 
     // Handle scroll effect
     useEffect(() => {
@@ -28,8 +31,18 @@ export default function Navbar() {
     const navLinks = [
         { path: '/', label: 'Home' },
         { path: '/products', label: 'Products' },
-        { path: '/support', label: 'Support' }, // Placeholder for broader nav
+        { path: 'https://t.me/Maizystore', label: 'Support', external: true },
     ]
+
+    const handleNavLinkClick = (link) => {
+        if (link.external) {
+            window.open(link.path, '_blank')
+        } else {
+            navigate(link.path)
+        }
+        setIsOpen(false)
+    }
+
 
     return (
         <motion.nav
@@ -54,9 +67,9 @@ export default function Navbar() {
                     {/* Desktop Menu - Centered & Spread */}
                     <div className="hidden md:flex items-center space-x-12 absolute left-1/2 -translate-x-1/2">
                         {navLinks.map((link) => (
-                            <Link
+                            <button
                                 key={link.path}
-                                to={link.path}
+                                onClick={() => handleNavLinkClick(link)}
                                 className={`relative font-medium text-sm tracking-wide transition-colors duration-300 ${location.pathname === link.path ? 'text-white' : 'text-gray-400 hover:text-white'
                                     }`}
                             >
@@ -67,15 +80,47 @@ export default function Navbar() {
                                         className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-primary rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"
                                     />
                                 )}
-                            </Link>
+                            </button>
                         ))}
                     </div>
 
                     {/* Right Actions */}
                     <div className="hidden md:flex items-center space-x-6">
-                        <button className="text-gray-400 hover:text-white transition-colors">
-                            <SearchIcon className="w-5 h-5" />
-                        </button>
+                        <div className="relative flex items-center">
+                            <AnimatePresence>
+                                {showSearch && (
+                                    <motion.form
+                                        initial={{ width: 0, opacity: 0 }}
+                                        animate={{ width: 240, opacity: 1 }}
+                                        exit={{ width: 0, opacity: 0 }}
+                                        onSubmit={(e) => {
+                                            e.preventDefault()
+                                            if (searchQuery.trim()) {
+                                                navigate(`/products?search=${encodeURIComponent(searchQuery)}`)
+                                                setShowSearch(false)
+                                            }
+                                        }}
+                                        className="mr-2"
+                                    >
+                                        <input
+                                            autoFocus
+                                            type="text"
+                                            placeholder="Search products..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
+                                        />
+                                    </motion.form>
+                                )}
+                            </AnimatePresence>
+                            <button
+                                onClick={() => setShowSearch(!showSearch)}
+                                className="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/5"
+                            >
+                                {showSearch ? <X size={20} /> : <SearchIcon className="w-5 h-5" />}
+                            </button>
+                        </div>
+
 
                         {user ? (
                             <div className="flex items-center gap-6">
@@ -190,15 +235,35 @@ export default function Navbar() {
                         className="fixed inset-0 top-[70px] bg-black/95 backdrop-blur-xl z-40 md:hidden overflow-y-auto"
                     >
                         <div className="container mx-auto px-6 py-8 flex flex-col gap-6">
+                            {/* Mobile Search */}
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault()
+                                    if (searchQuery.trim()) {
+                                        navigate(`/products?search=${encodeURIComponent(searchQuery)}`)
+                                        setIsOpen(false)
+                                    }
+                                }}
+                                className="relative"
+                            >
+                                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <input
+                                    type="text"
+                                    placeholder="Search products..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:border-purple-500"
+                                />
+                            </form>
+
                             {navLinks.map((link) => (
-                                <Link
+                                <button
                                     key={link.path}
-                                    to={link.path}
-                                    className="text-2xl font-bold text-gray-400 hover:text-white hover:pl-4 transition-all"
-                                    onClick={() => setIsOpen(false)}
+                                    onClick={() => handleNavLinkClick(link)}
+                                    className="text-2xl font-bold text-gray-400 hover:text-white hover:pl-4 transition-all text-left"
                                 >
                                     {link.label}
-                                </Link>
+                                </button>
                             ))}
 
                             <div className="w-full h-px bg-white/10 my-4" />

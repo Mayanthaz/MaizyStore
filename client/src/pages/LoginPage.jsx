@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, LogIn, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Mail, Lock, LogIn, ArrowRight, Eye, EyeOff, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -11,51 +11,121 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const { login } = useAuth()
+    const navigate = useNavigate()
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+
+        if (!email.trim() || !password.trim()) {
+            toast.error('Please fill in all fields')
+            return
+        }
+
         setIsLoading(true)
 
-        // Simulate slight delay for UX
-        await new Promise(r => setTimeout(r, 600))
+        try {
+            const result = await login(email, password)
+            if (result.success) {
+                navigate('/')
+            }
+        } catch (err) {
+            console.error('Login error:', err)
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
-        const result = await login(email, password)
-        // AuthContext handles success/failure toasts
-        setIsLoading(false)
+    const handleClose = () => {
+        navigate('/')
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #0f0f23 100%)' }}>
             {/* Decorative Background Elements */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px]" />
-                <div className="absolute top-[40%] -right-[10%] w-[40%] h-[40%] bg-pink-600/20 rounded-full blur-[120px]" />
-                <div className="absolute -bottom-[20%] left-[20%] w-[30%] h-[30%] bg-blue-600/20 rounded-full blur-[100px]" />
+                <div style={{ position: 'absolute', top: '-20%', left: '-10%', width: '50%', height: '50%', background: 'rgba(102, 126, 234, 0.15)', borderRadius: '50%', filter: 'blur(120px)' }} />
+                <div style={{ position: 'absolute', top: '40%', right: '-10%', width: '40%', height: '40%', background: 'rgba(245, 87, 108, 0.15)', borderRadius: '50%', filter: 'blur(120px)' }} />
+                <div style={{ position: 'absolute', bottom: '-20%', left: '20%', width: '30%', height: '30%', background: 'rgba(79, 172, 254, 0.15)', borderRadius: '50%', filter: 'blur(100px)' }} />
             </div>
 
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, type: 'spring' }}
-                className="w-full max-w-md relative z-10"
+                style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 10 }}
             >
-                <div className="glass backdrop-blur-2xl bg-white/5 border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
+                <div className="glass" style={{
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '24px',
+                    padding: '40px',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}>
+
+                    {/* Close Button */}
+                    <motion.button
+                        type="button"
+                        onClick={handleClose}
+                        whileHover={{ scale: 1.1, rotate: 90 }}
+                        whileTap={{ scale: 0.9 }}
+                        style={{
+                            position: 'absolute',
+                            top: '16px',
+                            right: '16px',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'rgba(255, 255, 255, 0.5)',
+                            transition: 'all 0.3s ease',
+                            zIndex: 20
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'
+                            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)'
+                            e.currentTarget.style.color = '#ef4444'
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
+                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
+                            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)'
+                        }}
+                        title="Close"
+                    >
+                        <X size={18} />
+                    </motion.button>
 
                     {/* Header */}
-                    <div className="text-center mb-10">
+                    <div style={{ textAlign: 'center', marginBottom: '36px' }}>
                         <motion.div
                             initial={{ y: -20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.1 }}
-                            className="inline-block p-4 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 mb-6 border border-white/5"
+                            style={{
+                                display: 'inline-flex',
+                                padding: '16px',
+                                borderRadius: '16px',
+                                background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(245, 87, 108, 0.2))',
+                                marginBottom: '20px',
+                                border: '1px solid rgba(255, 255, 255, 0.05)'
+                            }}
                         >
-                            <LogIn className="w-10 h-10 text-white" />
+                            <LogIn style={{ width: '36px', height: '36px', color: 'white' }} />
                         </motion.div>
                         <motion.h2
                             initial={{ y: -10, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.2 }}
-                            className="text-3xl font-bold text-white mb-2"
+                            style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}
                         >
                             Welcome Back
                         </motion.h2>
@@ -63,28 +133,50 @@ export default function LoginPage() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.3 }}
-                            className="text-gray-400"
+                            style={{ color: '#9ca3af' }}
                         >
                             Sign in to continue to Maizy Store
                         </motion.p>
                     </div>
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                         <motion.div
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.4 }}
                         >
-                            <div className="relative group">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors" size={20} />
+                            <div style={{ position: 'relative' }}>
+                                <Mail style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#6b7280', pointerEvents: 'none' }} size={20} />
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition-all font-medium"
+                                    style={{
+                                        width: '100%',
+                                        background: 'rgba(0, 0, 0, 0.2)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '12px',
+                                        paddingLeft: '44px',
+                                        paddingRight: '16px',
+                                        paddingTop: '14px',
+                                        paddingBottom: '14px',
+                                        color: 'white',
+                                        fontSize: '15px',
+                                        fontWeight: '500',
+                                        outline: 'none',
+                                        transition: 'all 0.3s ease'
+                                    }}
                                     placeholder="Email address"
                                     required
+                                    onFocus={(e) => {
+                                        e.target.style.borderColor = 'var(--primary-solid)'
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.2)'
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'
+                                        e.target.style.boxShadow = 'none'
+                                    }}
                                 />
                             </div>
                         </motion.div>
@@ -94,32 +186,80 @@ export default function LoginPage() {
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.5 }}
                         >
-                            <div className="relative group">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors" size={20} />
+                            <div style={{ position: 'relative' }}>
+                                <Lock style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#6b7280', pointerEvents: 'none' }} size={20} />
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition-all font-medium"
+                                    style={{
+                                        width: '100%',
+                                        background: 'rgba(0, 0, 0, 0.2)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '12px',
+                                        paddingLeft: '44px',
+                                        paddingRight: '48px',
+                                        paddingTop: '14px',
+                                        paddingBottom: '14px',
+                                        color: 'white',
+                                        fontSize: '15px',
+                                        fontWeight: '500',
+                                        outline: 'none',
+                                        transition: 'all 0.3s ease'
+                                    }}
                                     placeholder="Password"
                                     required
+                                    onFocus={(e) => {
+                                        e.target.style.borderColor = 'var(--primary-solid)'
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.2)'
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'
+                                        e.target.style.boxShadow = 'none'
+                                    }}
                                 />
+                                {/* Show/Hide Password Button */}
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                                    style={{
+                                        position: 'absolute',
+                                        right: '14px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        color: '#6b7280',
+                                        padding: '4px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'color 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.color = 'white'}
+                                    onMouseLeave={(e) => e.currentTarget.style.color = '#6b7280'}
+                                    title={showPassword ? 'Hide password' : 'Show password'}
                                 >
                                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
                         </motion.div>
 
-                        <div className="flex items-center justify-between text-sm px-1">
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" className="w-4 h-4 rounded border-gray-600 bg-black/20 text-purple-600 focus:ring-purple-500 focus:ring-offset-0" />
-                                <span className="text-gray-400 group-hover:text-gray-300 transition-colors">Remember me</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '14px', padding: '0 4px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    style={{
+                                        width: '16px',
+                                        height: '16px',
+                                        borderRadius: '4px',
+                                        accentColor: 'var(--primary-solid)'
+                                    }}
+                                />
+                                <span style={{ color: '#9ca3af' }}>Remember me</span>
                             </label>
-                            <Link to="/forgot-password" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+                            <Link to="/forgot-password" style={{ color: 'var(--primary-solid)', fontWeight: '500', textDecoration: 'none', transition: 'opacity 0.2s' }}>
                                 Forgot Password?
                             </Link>
                         </div>
@@ -132,14 +272,40 @@ export default function LoginPage() {
                             transition={{ delay: 0.6 }}
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all flex items-center justify-center gap-2 group relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
+                            style={{
+                                width: '100%',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                padding: '14px',
+                                borderRadius: '12px',
+                                border: 'none',
+                                cursor: isLoading ? 'not-allowed' : 'pointer',
+                                fontSize: '16px',
+                                boxShadow: '0 10px 25px -5px rgba(102, 126, 234, 0.4)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                opacity: isLoading ? 0.7 : 1,
+                                transition: 'all 0.3s ease',
+                                marginTop: '8px',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}
                         >
-                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none" />
                             {isLoading ? (
-                                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <div style={{
+                                    width: '22px',
+                                    height: '22px',
+                                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                                    borderTopColor: 'white',
+                                    borderRadius: '50%',
+                                    animation: 'spin 1s linear infinite'
+                                }} />
                             ) : (
                                 <>
-                                    Sign In <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                    Sign In <ArrowRight size={20} />
                                 </>
                             )}
                         </motion.button>
@@ -150,11 +316,16 @@ export default function LoginPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.7 }}
-                        className="mt-8 pt-6 border-t border-white/10 text-center"
+                        style={{
+                            marginTop: '28px',
+                            paddingTop: '20px',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                            textAlign: 'center'
+                        }}
                     >
-                        <p className="text-gray-400">
+                        <p style={{ color: '#9ca3af' }}>
                             Don't have an account?{' '}
-                            <Link to="/register" className="text-white hover:text-purple-400 font-bold transition-colors">
+                            <Link to="/register" style={{ color: 'white', fontWeight: 'bold', textDecoration: 'none', transition: 'color 0.2s' }}>
                                 Create Account
                             </Link>
                         </p>

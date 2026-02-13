@@ -80,8 +80,13 @@ const validateProduct = [
     body('stock')
         .isInt({ min: 0 })
         .withMessage('Stock must be a non-negative integer'),
+    body('image_url')
+        .optional({ checkFalsy: true })
+        .isURL()
+        .withMessage('Please provide a valid image URL'),
     handleValidationErrors
 ];
+
 
 // Order validation
 const validateOrder = [

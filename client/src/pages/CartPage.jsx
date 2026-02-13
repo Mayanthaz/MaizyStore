@@ -164,13 +164,8 @@ export default function CartPage() {
                                         </button>
                                     </div>
 
-                                    <button
-                                        onClick={() => removeItem(item.id)}
-                                        className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                                    >
-                                        <Trash2 size={20} />
-                                    </button>
                                 </motion.div>
+
                             ))}
                         </AnimatePresence>
                     </div>
